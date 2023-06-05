@@ -13,6 +13,6 @@ class ExampleController extends AbstractController
     #[Route('/example')]
     public function example(EntityManagerInterface $em): Response
     {
-        $products = $em->getRepository(Product::class)->findAll();
+
     }
 }
