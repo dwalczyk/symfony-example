@@ -3,6 +3,7 @@ version: '3.8'
 services:
 
   symfony-example-database:
+    container_name: symfony-example-database
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     volumes:
@@ -14,8 +15,11 @@ services:
       MYSQL_PASSWORD: symfony
     ports:
       - '3306:3306'
+    networks:
+      - example_network
 
   symfony-example-php:
+    container_name: symfony-example-php
     build:
       context: ./
       dockerfile: ./docker/php/Dockerfile
@@ -26,21 +30,24 @@ services:
     volumes:
       - .:/var/www/html
       - ./docker/php/ini/php.ini:/usr/local/etc/php/conf.d/custom_php.ini
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-15}-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-    volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+    networks:
+      - example_network
 
-volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+  symfony-example-nginx:
+    container_name: symfony-example-nginx
+    image: nginx:stable-alpine
+    ports:
+      - '80:80'
+    volumes:
+      - ./public:/var/www/html/public
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites:/etc/nginx/sites-available
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - symfony-example-php
+      - symfony-example-database
+    networks:
+      - example_network
+
+networks:
+  example_network:
